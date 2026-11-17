@@ -108,7 +108,7 @@ While the master switch is on, player harvester refinery deliveries earn `Person
 These pickup rewards do not credit the transport driver for collection; its delivery reward is earned when resources reach the refinery.
 AI-only work earns no personal driver reward.
 
-Credits require the compatible active King of the Hill wallet API. They are separate from the team's resource pool and normal round score.
+Credits require a compatible active wallet API: King of the Hill's, or Si_Buy's when King of the Hill does not provide one. They are separate from the team's resource pool and normal round score.
 Earned credit amounts accumulate per connected player, retaining fractional credit between batches.
 `DeliveryCooldownSeconds` sets the delay for a new payout window; later earnings do not push an existing due time back.
 Rate changes affect newly earned rewards. Cooldown changes affect new payout windows and new delivery cooldowns, not timers already scheduled.

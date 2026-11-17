@@ -648,6 +648,8 @@ namespace Si_Logistics
         // Reflection bridge to Si_KingOfTheHill.KingOfTheHill.GrantExternalCredits(long,int,string) and
         // GetCreditsBySteamId(long); no compile-time dependency. KoH returns false while its /buy
         // economy is inactive, so the player batch is retried after another 10 seconds.
+        // Where the wallet lives in Si_Buy instead (KoH without this API), Si_Buy.Buy offers the same
+        // two methods with the same meaning and is used as the fallback.
         private static class KohCredits
         {
             private static MethodInfo _grant, _balance;
@@ -658,16 +660,20 @@ namespace Si_Logistics
             private static bool Resolve()
             {
                 if (_grant != null) return true;
-                foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+                foreach (string wallet in new[] { "Si_KingOfTheHill.KingOfTheHill", "Si_Buy.Buy" })
                 {
-                    Type type;
-                    try { type = assembly.GetType("Si_KingOfTheHill.KingOfTheHill"); } catch { continue; }
-                    if (type == null) continue;
-                    _grant = type.GetMethod("GrantExternalCredits", BindingFlags.Public | BindingFlags.Static, null,
-                                            new[] { typeof(long), typeof(int), typeof(string) }, null);
-                    _balance = type.GetMethod("GetCreditsBySteamId", BindingFlags.Public | BindingFlags.Static, null,
-                                              new[] { typeof(long) }, null);
-                    break;
+                    foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        Type type;
+                        try { type = assembly.GetType(wallet); } catch { continue; }
+                        if (type == null) continue;
+                        _grant = type.GetMethod("GrantExternalCredits", BindingFlags.Public | BindingFlags.Static, null,
+                                                new[] { typeof(long), typeof(int), typeof(string) }, null);
+                        _balance = type.GetMethod("GetCreditsBySteamId", BindingFlags.Public | BindingFlags.Static, null,
+                                                  new[] { typeof(long) }, null);
+                        break;
+                    }
+                    if (_grant != null) break;
                 }
                 if (_grant == null && !_missingLogged)
                 {
