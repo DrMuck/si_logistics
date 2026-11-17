@@ -46,6 +46,7 @@ namespace Si_Logistics
         public CommandConfig Commands = new CommandConfig();
         [JsonProperty("harvesterfix")]
         public HarvesterFixConfig HarvesterFix = new HarvesterFixConfig();
+        public WaspHarvestConfig WaspHarvest = new WaspHarvestConfig();
 
         public sealed class CommandConfig
         {
@@ -189,6 +190,8 @@ namespace Si_Logistics
             if (previousHarvesterSettings != JsonConvert.SerializeObject(Cfg.HarvesterFix)) ResetHarvesterFix(true);
             if (Cfg.AITransport == null) Cfg.AITransport = new AITransportConfig();
             ValidateAITransportConfig();
+            ValidateWaspHarvestConfig();
+            ApplyWaspConfigToLive();
             if (!Cfg.Enabled) ReleaseLogisticsControl();
             else if (!Cfg.AITransport.Enabled) ResetAITransports(true);
         }
@@ -223,6 +226,7 @@ namespace Si_Logistics
             InstallHarvesterFix();
             InstallAITransport();
             InstallCommanderScore();
+            InstallWaspHarvest();
             // Fixed public surface: both names always expose exactly the same commands.
             HelperMethods.RegisterPlayerCommand("logistics", OnLogisticsCommand, Cfg.Commands.HideFromChat);
             HelperMethods.RegisterPlayerCommand("logi", OnLogisticsCommand, Cfg.Commands.HideFromChat);
@@ -366,6 +370,7 @@ namespace Si_Logistics
                 " | rewards " + RewardSettings() + (KohCredits.Available ? " (KoH linked)" : " (KoH not found)"));
             ShowHarvesterStatus(caller);
             ShowAITransportStatus(caller);
+            ShowWaspHarvestStatus(caller);
             Reply(caller, "Refineries (server): " + LogisticsRefineryCount() + ".");
             Reply(caller, "Logistics score " + (Cfg.LogisticsScore ? "ON" : "OFF") +
                 " | unload " + Cfg.ScoreUnload + " | transfer " + Cfg.ScoreTransfer + " points per 100 Balterium" +
@@ -389,6 +394,7 @@ namespace Si_Logistics
             Reply(caller, "Admin: cooldown <seconds>; debug on|off; reload; harvesterfix on|off; aitransport on|off.");
             Reply(caller, "Admin: /logisticsscore on|off; /scoreunload <0..100>; /scoretransfer <0..100> (points per 100 Balterium).");
             Reply(caller, "Admin: /logisticsscorecomander on|off; edit CommanderScore.Rules in config, then /logistics reload.");
+            Reply(caller, "Wasp harvest: /wasp [help] for everyone. Admin: /wasp set <key> <value>.");
         }
 
         private static bool TryParseFloat(string text, out float value) =>
@@ -405,6 +411,7 @@ namespace Si_Logistics
         {
             if (!Game.GetIsServer()) return;
             UpdateHarvesterFix();
+            UpdateWaspHarvest();
             // Earned rewards are retained while the master switch pauses payouts.
             try { PayDueRewards(); }
             catch (Exception exception) { DebugWarning("Logistics payout: " + exception.Message); }
